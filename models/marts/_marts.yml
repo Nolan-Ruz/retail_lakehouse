@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: dim_product
+    description: >
+      Conformed product dimension. One row per SKU across both ERPs, with
+      ERP B winning where a product exists in both.
+    columns:
+      - name: product_key
+        description: Surrogate key. Hash of the natural key.
+        data_tests: [not_null, unique]
+      - name: sku
+        description: Natural key.
+        data_tests: [not_null, unique]
+      - name: category_name
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Seed & Crop Inputs
+                  - Livestock Feed
+                  - Bulk Fuel
+                  - Farm Hardware
+                  - Tires
+                  - Lubricants
+                  - Unclassified
+      - name: source_system
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["ERP_A", "ERP_B"]
+      - name: standard_cost
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false

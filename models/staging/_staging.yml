@@ -1,0 +1,76 @@
+version: 2
+
+models:
+  - name: stg_erp_a__products
+    description: ERP A product master, renamed and recast.
+    columns:
+      - name: sku
+        data_tests: [not_null, unique]
+      - name: standard_cost
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_erp_b__products
+    description: ERP B product master, renamed and recast.
+    columns:
+      - name: sku
+        data_tests: [not_null, unique]
+      - name: standard_cost
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_erp_a__sales
+    description: ERP A invoice lines.
+    columns:
+      - name: sku
+        data_tests: [not_null]
+      - name: site_id
+        data_tests: [not_null]
+      - name: quantity
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: currency_code
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["CAD"]
+
+  - name: stg_erp_b__sales
+    description: ERP B invoice lines.
+    columns:
+      - name: sku
+        data_tests: [not_null]
+      - name: site_id
+        data_tests: [not_null]
+      - name: quantity
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_sites
+    description: Site reference data.
+    columns:
+      - name: site_id
+        data_tests: [not_null, unique]
+
+  - name: stg_inventory_snapshots
+    description: Month-end on-hand position with hand-maintained min/max levels.
+    columns:
+      - name: site_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_sites')
+                field: site_id

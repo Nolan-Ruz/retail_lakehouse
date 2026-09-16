@@ -1,0 +1,9 @@
+# Local profile. dbt looks in ~/.dbt/profiles.yml by default, so either copy
+# this there or run dbt with:  dbt build --profiles-dir .
+retail_lakehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: retail_lakehouse.duckdb
+      threads: 4

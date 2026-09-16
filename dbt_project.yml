@@ -1,0 +1,40 @@
+name: retail_lakehouse
+version: "1.0.0"
+config-version: 2
+
+profile: retail_lakehouse
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  retail_lakehouse:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: ephemeral
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  retail_lakehouse:
+    +schema: raw
+    erp_a_sales:
+      +column_types:
+        BUDAT: date
+    erp_b_sales:
+      +column_types:
+        InvoiceDate: date
+    inventory_snapshots:
+      +column_types:
+        snapshot_date: date

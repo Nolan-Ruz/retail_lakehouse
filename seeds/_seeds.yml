@@ -1,0 +1,65 @@
+version: 2
+
+# Raw data lives as seeds here so the project runs anywhere with no warehouse
+# to connect to. In a real project these would be tables in the warehouse,
+# declared as sources with freshness, e.g.
+#
+#   sources:
+#     - name: erp_a
+#       schema: raw_sap
+#       tables:
+#         - name: sales
+#           loaded_at_field: BUDAT
+#           freshness:
+#             warn_after: {count: 12, period: hour}
+#             error_after: {count: 24, period: hour}
+#
+# ...and staging would use {{ source('erp_a', 'sales') }} instead of ref().
+# Everything downstream stays identical.
+
+seeds:
+  - name: erp_a_products
+    description: >
+      SAP-style material master. Cryptic column names, mandant column on every
+      row. Keyed on MATNR.
+    columns:
+      - name: MATNR
+        description: Material number. Natural key.
+        data_tests: [not_null, unique]
+
+  - name: erp_b_products
+    description: >
+      Dynamics 365 F&O-style released products. Business-friendly naming,
+      keyed on ItemNumber. Overlaps ERP A on ~20 SKUs mid-migration.
+    columns:
+      - name: ItemNumber
+        data_tests: [not_null, unique]
+
+  - name: erp_a_sales
+    description: SAP-style billing line items. One row per invoice line.
+    columns:
+      - name: MATNR
+        data_tests: [not_null]
+      - name: MENGE
+        description: Quantity sold.
+        data_tests: [not_null]
+
+  - name: erp_b_sales
+    description: D365-style sales invoice lines.
+    columns:
+      - name: ItemNumber
+        data_tests: [not_null]
+      - name: Quantity
+        data_tests: [not_null]
+
+  - name: sites
+    description: Branch reference data, maintained outside both ERPs.
+    columns:
+      - name: site_id
+        data_tests: [not_null, unique]
+
+  - name: inventory_snapshots
+    description: >
+      Month-end on-hand position per site/SKU, alongside the min/max levels the
+      supply chain team maintains by hand. The forecast exists to replace those
+      hand-set levels.
