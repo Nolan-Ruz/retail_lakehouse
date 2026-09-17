@@ -13,6 +13,7 @@ models:
         description: Natural key.
         data_tests: [not_null, unique]
       - name: category_name
+        description: Product category.
         data_tests:
           - accepted_values:
               arguments:
@@ -25,14 +26,134 @@ models:
                   - Lubricants
                   - Unclassified
       - name: source_system
+        description: Which ERP the product record was sourced from.
         data_tests:
           - accepted_values:
               arguments:
                 values: ["ERP_A", "ERP_B"]
       - name: standard_cost
+        description: Standard unit cost of the product.
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
                 inclusive: false
+  - name: dim_site
+    description: >
+      Conformed site dimension. One row per site. The site_id is the natural key.
+    columns:
+      - name: site_key
+        description: Surrogate key. Hash of the natural key.
+        data_tests: 
+          - not_null
+          - unique
+      - name: site_id
+        description: Natural key.
+        data_tests: 
+          - not_null
+          - unique
+      - name: site_name
+        description: Human-readable name of the site.
+        data_tests:
+          - not_null
+      - name: province
+        description: Province the site is located in.
+        data_tests:
+          - not_null
+      - name: region
+        description: Sales region the site belongs to.
+        data_tests:
+          - not_null
+  - name: dim_date
+    description: >
+      Conformed date dimension. One row per date. The date_day is the natural key.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: is_quarter_1 + is_quarter_2 + is_quarter_3 + is_quarter_4 = 1
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: is_half_1 + is_half_2 = 1
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: is_weekend = case when day_of_week in (0, 6) then 1 else 0 end
+    columns:
+      - name: date_key
+        description: Surrogate key. Hash of the natural key.
+        data_tests: 
+          - not_null
+          - unique
+      - name: date_actual
+        description: Natural key.
+        data_tests: 
+          - not_null
+          - unique
+      - name: year_actual
+        description: Calendar year of the date.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 2024
+                max_value: 2026
+                inclusive: true
+      - name: month_actual
+        description: Calendar month of the date (1-12).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 12
+                inclusive: true
+      - name: day_actual
+        description: Day of month (1-31).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 31
+                inclusive: true
+      - name: day_of_week
+        description: Day of week, 0 (Sunday) through 6 (Saturday).
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 6
+                inclusive: true
+      - name: is_weekend
+        description: 1 if day_of_week is Saturday or Sunday, else 0.
+        data_tests:
+          - not_null
+      - name: is_quarter_1
+        description: 1 if the date falls in fiscal Q1 (Oct-Dec), else 0.
+        data_tests:
+          - not_null
+      - name: is_quarter_2
+        description: 1 if the date falls in fiscal Q2 (Jan-Mar), else 0.
+        data_tests:
+          - not_null
+      - name: is_quarter_3
+        description: 1 if the date falls in fiscal Q3 (Apr-Jun), else 0.
+        data_tests:
+          - not_null
+      - name: is_quarter_4
+        description: 1 if the date falls in fiscal Q4 (Jul-Sep), else 0.
+        data_tests:
+          - not_null
+      - name: is_half_1
+        description: 1 if the date falls in fiscal H1 (Oct-Mar), else 0.
+        data_tests:
+          - not_null
+      - name: is_half_2
+        description: 1 if the date falls in fiscal H2 (Apr-Sep), else 0.
+        data_tests:
+          - not_null
+      - name: fiscal_year
+        description: Fiscal year, incrementing at the start of October.
+        data_tests:
+          - not_null
