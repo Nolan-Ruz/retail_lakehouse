@@ -157,3 +157,18 @@ models:
         description: Fiscal year, incrementing at the start of October.
         data_tests:
           - not_null
+  - name: sales_review
+    description: >
+      Sales rows awaiting a business ruling. Rows in the same review_group_key
+      match on site, sku, date, quantity and currency but differ in net_amount.
+    columns:
+      - name: review_group_key
+        description: Hash of the matching columns. Rows sharing it belong together.
+        data_tests: [not_null]
+      - name: review_scope
+        description: Whether the conflicting rows come from one ERP or both.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["within_system", "across_systems"]

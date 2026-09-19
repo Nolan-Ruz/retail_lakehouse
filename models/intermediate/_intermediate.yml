@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: int_sales_unioned
+    description: >
+      ERP A and ERP B sales, unioned. An ERP A row is dropped only when ERP B
+      holds an exact match; ERP B wins. Rows that match on everything except
+      net_amount are kept and flagged for business review.
+    columns:
+      - name: needs_review
+        description: >
+          True when another row shares site, sku, date, quantity and currency
+          but has a different net_amount.
+        data_tests:
+          - not_null
+          # Warn, don't fail: a conflict is a question for the business, not a
+          # broken pipeline.
+          - accepted_values:
+              arguments:
+                values: [false]
+                quote: false
+              config:
+                severity: warn
+      - name: review_scope
+        description: >
+          For flagged rows, whether the conflicting rows come from one ERP or
+          both. Null when the row is not flagged.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["within_system", "across_systems"]
