@@ -1,0 +1,4 @@
+# Count SQL and YAML in the GitHub language bar. Linguist classes both as data
+# and hides them by default.
+*.sql linguist-detectable=true
+*.yml linguist-detectable=true
