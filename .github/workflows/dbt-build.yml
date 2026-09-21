@@ -1,0 +1,49 @@
+name: dbt build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# A newer push to the same branch/PR supersedes the run in flight.
+concurrency:
+  group: dbt-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Pinned to the versions used locally so CI and dev agree.
+      - name: Install dbt
+        run: pip install dbt-core==1.12.5 dbt-duckdb==1.11.0
+
+      - name: Install dbt packages
+        run: dbt deps --profiles-dir .
+
+      # Seeds, models and tests in DAG order. Any failing test fails the job.
+      - name: dbt build
+        run: dbt build --profiles-dir . --target dev --fail-fast
+
+      - name: Upload dbt artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: |
+            target/run_results.json
+            target/manifest.json
+            logs/dbt.log
+          if-no-files-found: ignore
+          retention-days: 7
