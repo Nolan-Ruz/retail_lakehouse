@@ -244,3 +244,63 @@ models:
           - accepted_values:
               arguments:
                 values: ["CAD"]
+  - name: fact_inventory_position
+    description: >
+      Inventory periodic snapshot fact table. Grain: one row per site,
+      product and month-end snapshot date. Unlike fact_sales this isn't a
+      transaction fact table — a row exists for every checkpoint whether or
+      not anything happened, because the business counts inventory monthly
+      rather than logging an event per change.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_key
+              - site_key
+              - date_key
+    columns:
+      - name: product_key
+        description: Foreign key to dim_product.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: site_key
+        description: Foreign key to dim_site.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_site')
+                field: site_key
+      - name: date_key
+        description: Foreign key to dim_date.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: snapshot_date
+        description: Month-end date the count was taken, from dim_date.
+        data_tests:
+          - not_null
+      - name: quantity_on_hand
+        description: Units on hand at the site for the product at snapshot_date.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: stock_status
+        description: >
+          quantity_on_hand bucketed against the site's min/max reorder
+          levels for the product.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["below_min", "in_band", "above_max"]
