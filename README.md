@@ -81,7 +81,6 @@ in every report.
 
 ## Status
 
-Modelling is done: all five marts are built and tested, `fact_sales` is
-incremental, `snap_product_costs` snapshots cost history, and CI runs the
-build and publishes the docs on every push. What's left is tracked in
-[`TODO.md`](TODO.md) — just the non-code items.
+Done: all five marts are built and tested, `fact_sales` is incremental,
+`snap_product_costs` snapshots cost history, and CI runs the build and
+publishes the docs on every push.
