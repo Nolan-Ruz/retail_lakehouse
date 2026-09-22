@@ -42,12 +42,16 @@ dbt build --profiles-dir .
 `dbt build` runs seeds, models and tests in dependency order and stops on
 failure. That's also what `.github/workflows/dbt-build.yml` runs on every
 push and PR, so a broken model or a failing test can't merge quietly. To
-browse the lineage graph:
+browse the lineage graph locally:
 
 ```bash
 dbt docs generate --profiles-dir .
 dbt docs serve
 ```
+
+Or skip the local step: `.github/workflows/dbt-docs.yml` regenerates the docs
+and publishes them to GitHub Pages on every push to master —
+**[nolan-ruz.github.io/retail_lakehouse](https://nolan-ruz.github.io/retail_lakehouse/)**.
 
 ### Note on `packages.yml`
 
@@ -77,7 +81,7 @@ in every report.
 
 ## Status
 
-Seeds, staging, intermediate, and the `dim_date` / `dim_site` / `dim_product`
-/ `fact_sales` marts are built and tested. What's still open is tracked in
-[`TODO.md`](TODO.md): an inventory mart, two judgement-call singular tests, a
-snapshot, and making `fact_sales` incremental.
+Modelling is done: all five marts are built and tested, `fact_sales` is
+incremental, `snap_product_costs` snapshots cost history, and CI runs the
+build and publishes the docs on every push. What's left is tracked in
+[`TODO.md`](TODO.md) — just the non-code items.
