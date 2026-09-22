@@ -1,3 +1,11 @@
+{{
+    config(
+        materialized='incremental',
+        unique_key=['product_key', 'site_key', 'date_key'],
+        incremental_strategy='merge'
+    )
+}}
+
 with sales as (
     select * from {{ ref('int_sales_unioned') }}
 ),
@@ -30,6 +38,14 @@ sales_joined as (
         left join products on sales.sku = products.sku
         left join sites on sales.site_id = sites.site_id
         left join dates on sales.sold_date = dates.date_actual
+
+    {% if is_incremental() %}
+    -- Only reprocess source rows newer than what's already in the table,
+    -- so a normal run aggregates just the new day(s) instead of rescanning
+    -- and re-summing the full sales history.
+    where sales.sold_date > (select max(sold_date) from {{ this }})
+    {% endif %}
+
     group by sales.sku,
         sales.site_id,
         products.product_key,
