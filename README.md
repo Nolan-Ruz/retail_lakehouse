@@ -1,10 +1,10 @@
 # retail_lakehouse
 
-A dbt project that rebuilds a two-ERP retail reporting layer: raw extracts from
-two source systems, reconciled into one governed set of facts and dimensions.
-
-Built on dbt-core and DuckDB, so it runs locally with no warehouse and no cloud
-account. The adapter is a config file; the modelling is the point.
+I built this to rebuild, in dbt, the same Bronze / Silver / Gold pattern I ran
+in Fabric at UFA: raw extracts from two source ERPs, reconciled into one
+governed set of facts and dimensions. It runs on dbt-core and DuckDB, so
+there's no warehouse and no cloud account to stand up — the adapter is a
+config file; the modelling is the point.
 
 ## The problem it models
 
@@ -15,8 +15,12 @@ systems, so a naive union double-counts them.
 
 Reconciling that is the actual work, and it happens in `int_products_unioned`:
 union, rank by source precedence, keep one row per natural key. ERP B wins
-because it is the go-forward system, and `source_system` stays on the row so
-anyone reading the mart can see which master a product came from.
+because it's the go-forward system, and `source_system` stays on the row so
+anyone reading the mart can see which master a product came from. Sales get
+the same treatment in `int_sales_unioned`, with the reasoning for that call
+written as a comment in the model — overlap on transactions isn't the same
+problem as overlap on master records, and it's worth checking the data before
+assuming it is.
 
 ## Layers
 
@@ -27,9 +31,6 @@ anyone reading the mart can see which master a product came from.
 | `models/intermediate/` | ephemeral | Reconciliation and reshaping between staging and marts. |
 | `models/marts/` | table | Facts and dimensions. What a BI tool connects to. |
 
-This is the same Bronze / Silver / Gold split as a Fabric or Databricks
-lakehouse, in dbt's conventions and vocabulary.
-
 ## Running it
 
 ```bash
@@ -39,7 +40,9 @@ dbt build --profiles-dir .
 ```
 
 `dbt build` runs seeds, models and tests in dependency order and stops on
-failure, which is what you want in CI. To browse the lineage graph:
+failure. That's also what `.github/workflows/dbt-build.yml` runs on every
+push and PR, so a broken model or a failing test can't merge quietly. To
+browse the lineage graph:
 
 ```bash
 dbt docs generate --profiles-dir .
@@ -68,6 +71,13 @@ prairie farm-supply branches and 120 SKUs, with a spring seeding peak and a
 smaller autumn peak on seasonal categories, plus month-end inventory snapshots
 carrying the min/max levels the supply chain team maintains by hand.
 
-Seasonality is deliberate: it is what makes a forecast worth building, and what
-makes `is_seasonal` belong in the dimension rather than being re-derived in
-every report.
+Seasonality is deliberate: it's what makes a forecast worth building, and
+what makes `is_seasonal` belong in the dimension rather than being re-derived
+in every report.
+
+## Status
+
+Seeds, staging, intermediate, and the `dim_date` / `dim_site` / `dim_product`
+/ `fact_sales` marts are built and tested. What's still open is tracked in
+[`TODO.md`](TODO.md): an inventory mart, two judgement-call singular tests, a
+snapshot, and making `fact_sales` incremental.
