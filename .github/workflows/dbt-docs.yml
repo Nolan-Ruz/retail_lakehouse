@@ -1,0 +1,64 @@
+name: dbt docs
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# Pages deployments queue rather than cancel, so a docs site never gets left
+# mid-deploy by a newer push superseding it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Pinned to the versions used locally so CI and dev agree.
+      - name: Install dbt
+        run: pip install dbt-core==1.12.5 dbt-duckdb==1.11.0
+
+      - name: Install dbt packages
+        run: dbt deps --profiles-dir .
+
+      # dbt docs generate builds catalog.json from the warehouse's actual
+      # column types, so the models need to exist first.
+      - name: dbt build
+        run: dbt build --profiles-dir . --target dev
+
+      - name: Generate docs
+        run: dbt docs generate --profiles-dir . --target dev
+
+      - name: Assemble docs site
+        run: |
+          mkdir -p public
+          cp target/index.html target/catalog.json target/manifest.json public/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy-docs:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
